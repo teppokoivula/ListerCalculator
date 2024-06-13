@@ -6,7 +6,7 @@ class ListerCalculator extends WireData implements Module, ConfigurableModule {
 		return [
 			'title' => 'Lister Calculator',
 			'summary' => 'Calculates sums of fields in Lister results',
-			'version' => '0.0.1',
+			'version' => '0.0.2',
 			'author' => 'Teppo Koivula',
 			'icon' => 'calculator',
 			'requires' => 'ProcessWire>=3.0.123',
@@ -83,10 +83,14 @@ class ListerCalculator extends WireData implements Module, ConfigurableModule {
 
 		$totals = [];
 
+		// get field object
+		$field = wire()->fields->get($field_name);
+		if (!$field) return $totals;
+
 		// calculate total amount for selector
 		$query = wire()->database->query('
 			SELECT SUM(`data`) AS `value`
-			FROM `field_amount`
+			FROM `' . $field->getTable() . '`
 			WHERE `pages_id` IN (
 				' . implode(',', $page_ids) . '
 			)
@@ -98,7 +102,7 @@ class ListerCalculator extends WireData implements Module, ConfigurableModule {
 			if ($no_limits_page_ids) {
 				$query = wire()->database->query('
 					SELECT SUM(`data`) AS `value`
-					FROM `field_amount`
+					FROM `' . $field->getTable() . '`
 					WHERE `pages_id` IN (
 						' . implode(',', $no_limits_page_ids) . '
 					)
