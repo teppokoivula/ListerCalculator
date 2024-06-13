@@ -6,7 +6,7 @@ class ListerCalculator extends WireData implements Module, ConfigurableModule {
 		return [
 			'title' => 'Lister Calculator',
 			'summary' => 'Calculates sums of fields in Lister results',
-			'version' => '0.0.2',
+			'version' => '0.0.3',
 			'author' => 'Teppo Koivula',
 			'icon' => 'calculator',
 			'requires' => 'ProcessWire>=3.0.123',
@@ -132,7 +132,7 @@ class ListerCalculator extends WireData implements Module, ConfigurableModule {
 			if (!$field) continue;
 
 			$out .=
-				'<div class="uk-float-right uk-margin-bottom uk-badge" style="padding: 1.25rem">'
+				'<div class="uk-margin-bottom uk-margin-small-right uk-badge" style="padding: 1.25rem">'
 				. '<span uk-icon="icon: info" class="uk-margin-small-right"></span> '
 				. sprintf(__('Sum of field "%s"'), $field->label) . ': '
 				. $totals['value']
