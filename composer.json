@@ -1,0 +1,22 @@
+{
+    "name": "teppokoivula/lister-calculator",
+    "type": "pw-module",
+    "description": "ProcessWire CMS/CMF module for calculating sums of fields in Lister results",
+    "keywords": [
+        "module",
+        "processwire"
+    ],
+    "homepage": "https://github.com/teppokoivula/ListerCalculator",
+    "license": "GPL-2.0-only",
+    "authors": [
+        {
+            "name": "Teppo Koivula",
+            "homepage": "https://github.com/teppokoivula",
+            "email": "teppo.koivula@gmail.com"
+        }
+    ],
+    "require": {
+        "php": ">=7.1",
+        "wireframe-framework/processwire-composer-installer": "^1.0.0"
+    }
+}
