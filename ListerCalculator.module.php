@@ -6,7 +6,7 @@ class ListerCalculator extends WireData implements Module, ConfigurableModule {
 		return [
 			'title' => 'Lister Calculator',
 			'summary' => 'Calculates sums of fields in Lister results',
-			'version' => '0.0.3',
+			'version' => '0.0.4',
 			'author' => 'Teppo Koivula',
 			'icon' => 'calculator',
 			'requires' => 'ProcessWire>=3.0.123',
@@ -48,6 +48,10 @@ class ListerCalculator extends WireData implements Module, ConfigurableModule {
 		$selector = $event->object->getSelector();
 		if (empty($selector)) return;
 
+		// remove any blank items from selector (e.g. title= or title!= or title%=)
+		$selector = $event->object->removeBlankSelectors($selector);
+		if (empty($selector)) return;
+
 		// no limits version of selector
 		$no_limits_selector = empty($selector) || strpos($selector, 'limit=') === false
 			? null
@@ -83,15 +87,49 @@ class ListerCalculator extends WireData implements Module, ConfigurableModule {
 
 		$totals = [];
 
-		// get field object
-		$field = wire()->fields->get($field_name);
-		if (!$field) return $totals;
+		// one can never be too sure...
+		$page_ids = array_filter($page_ids, 'is_numeric');
+		if (empty($page_ids)) return $totals;
+		if (!empty($no_limits_page_ids)) {
+			$no_limits_page_ids = array_filter($no_limits_page_ids, 'is_numeric');
+			if (empty($no_limits_page_ids)) {
+				$no_limits_page_ids = null;
+			}
+		}
+
+		// table, data column, and ID column names
+		$table_name = null;
+		$data_column = 'data';
+		$id_column = 'pages_id';
+
+		// just in case support a few page properties
+		if (in_array(strtolower($field_name), [
+			'id',
+			'name',
+			'status',
+			'created',
+			'modified',
+		])) {
+			$table_name = 'pages';
+			$data_column = strtolower($field_name);
+			$id_column = 'id';
+		}
+
+		if ($table_name === null) {
+
+			// get field object
+			$field = wire()->fields->get($field_name);
+			if (!$field) return $totals;
+
+			// get table name
+			$table_name = $field->getTable();
+		}
 
 		// calculate total amount for selector
 		$query = wire()->database->query('
-			SELECT SUM(`data`) AS `value`
-			FROM `' . $field->getTable() . '`
-			WHERE `pages_id` IN (
+			SELECT SUM(`' . $data_column . '`) AS `value`
+			FROM `' . $table_name . '`
+			WHERE `' . $id_column . '` IN (
 				' . implode(',', $page_ids) . '
 			)
 		');
@@ -101,9 +139,9 @@ class ListerCalculator extends WireData implements Module, ConfigurableModule {
 		if (!empty($no_limits_page_ids) && $totals['value']) {
 			if ($no_limits_page_ids) {
 				$query = wire()->database->query('
-					SELECT SUM(`data`) AS `value`
-					FROM `' . $field->getTable() . '`
-					WHERE `pages_id` IN (
+					SELECT SUM(`' . $data_column . '`) AS `value`
+					FROM `' . $table_name . '`
+					WHERE `' . $id_column . '` IN (
 						' . implode(',', $no_limits_page_ids) . '
 					)
 				');
@@ -129,7 +167,11 @@ class ListerCalculator extends WireData implements Module, ConfigurableModule {
 			if (empty($totals['value'])) continue;
 
 			$field = wire()->fields->get($field_name);
-			if (!$field) continue;
+			if (!$field) {
+				$field = (object) [
+					'label' => $field_name,
+				];
+			}
 
 			$out .=
 				'<div class="uk-margin-bottom uk-margin-small-right uk-badge" style="padding: 1.25rem">'
@@ -137,7 +179,7 @@ class ListerCalculator extends WireData implements Module, ConfigurableModule {
 				. sprintf(__('Sum of field "%s"'), $field->label) . ': '
 				. $totals['value']
 				. (
-					$totals['no_limits_value'] !== null && $totals['no_limits_value'] != $totals['total']
+					$totals['no_limits_value'] !== null && $totals['no_limits_value'] != $totals['value']
 						? ' ' . __('of') . ' ' . $totals['no_limits_value']
 						: ''
 				)
