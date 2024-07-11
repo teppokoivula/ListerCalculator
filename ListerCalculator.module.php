@@ -6,7 +6,7 @@ class ListerCalculator extends WireData implements Module, ConfigurableModule {
 		return [
 			'title' => 'Lister Calculator',
 			'summary' => 'Calculates sums of fields in Lister results',
-			'version' => '0.0.4',
+			'version' => '0.0.5',
 			'author' => 'Teppo Koivula',
 			'icon' => 'calculator',
 			'requires' => 'ProcessWire>=3.0.123',
@@ -79,7 +79,7 @@ class ListerCalculator extends WireData implements Module, ConfigurableModule {
 	 * Calculate totals for a field
 	 *
 	 * @param array $page_ids
-	 * @param array $no_limits_page_ids
+	 * @param array|null $no_limits_page_ids
 	 * @param string $field_name
 	 * @return array
 	 */
@@ -137,16 +137,14 @@ class ListerCalculator extends WireData implements Module, ConfigurableModule {
 
 		// calculate total amount for no-limits selector
 		if (!empty($no_limits_page_ids) && $totals['value']) {
-			if ($no_limits_page_ids) {
-				$query = wire()->database->query('
-					SELECT SUM(`' . $data_column . '`) AS `value`
-					FROM `' . $table_name . '`
-					WHERE `' . $id_column . '` IN (
-						' . implode(',', $no_limits_page_ids) . '
-					)
-				');
-				$totals['no_limits_value'] = $query->fetchColumn();
-			}
+			$query = wire()->database->query('
+				SELECT SUM(`' . $data_column . '`) AS `value`
+				FROM `' . $table_name . '`
+				WHERE `' . $id_column . '` IN (
+					' . implode(',', $no_limits_page_ids) . '
+				)
+			');
+			$totals['no_limits_value'] = $query->fetchColumn();
 		}
 
 		return $totals;
@@ -162,9 +160,9 @@ class ListerCalculator extends WireData implements Module, ConfigurableModule {
 
 		$out = '';
 
-		foreach ($totals as $field_name => $totals) {
+		foreach ($totals as $field_name => $total) {
 
-			if (empty($totals['value'])) continue;
+			if (empty($total['value'])) continue;
 
 			$field = wire()->fields->get($field_name);
 			if (!$field) {
@@ -177,10 +175,10 @@ class ListerCalculator extends WireData implements Module, ConfigurableModule {
 				'<div class="uk-margin-bottom uk-margin-small-right uk-badge" style="padding: 1.25rem">'
 				. '<span uk-icon="icon: info" class="uk-margin-small-right"></span> '
 				. sprintf(__('Sum of field "%s"'), $field->label) . ': '
-				. $totals['value']
+				. $total['value']
 				. (
-					$totals['no_limits_value'] !== null && $totals['no_limits_value'] != $totals['value']
-						? ' ' . __('of') . ' ' . $totals['no_limits_value']
+					$total['no_limits_value'] !== null && $total['no_limits_value'] != $total['value']
+						? ' ' . __('of') . ' ' . $total['no_limits_value']
 						: ''
 				)
 				. '</div>';
