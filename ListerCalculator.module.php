@@ -6,7 +6,7 @@ class ListerCalculator extends WireData implements Module, ConfigurableModule {
 		return [
 			'title' => 'Lister Calculator',
 			'summary' => 'Calculates sums of fields in Lister results',
-			'version' => '0.0.5',
+			'version' => '0.0.6',
 			'author' => 'Teppo Koivula',
 			'icon' => 'calculator',
 			'requires' => 'ProcessWire>=3.0.123',
@@ -136,6 +136,7 @@ class ListerCalculator extends WireData implements Module, ConfigurableModule {
 		$totals['value'] = $query->fetchColumn() ?: 0;
 
 		// calculate total amount for no-limits selector
+		$totals['no_limits_value'] = null;
 		if (!empty($no_limits_page_ids) && $totals['value']) {
 			$query = wire()->database->query('
 				SELECT SUM(`' . $data_column . '`) AS `value`
