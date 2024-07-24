@@ -6,7 +6,7 @@ class ListerCalculator extends WireData implements Module, ConfigurableModule {
 		return [
 			'title' => 'Lister Calculator',
 			'summary' => 'Calculates sums of fields in Lister results',
-			'version' => '0.0.6',
+			'version' => '0.0.7',
 			'author' => 'Teppo Koivula',
 			'icon' => 'calculator',
 			'requires' => 'ProcessWire>=3.0.123',
@@ -66,10 +66,12 @@ class ListerCalculator extends WireData implements Module, ConfigurableModule {
 
 		// calculate totals for each configured field
 		$totals = [];
-		foreach ($listers_and_fields as $lister_name => $field_name) {
+		foreach ($listers_and_fields as $lister_name => $field_names) {
 			if ($lister_name !== $lister_page->name) continue;
-			if (isset($totals[$field_name])) continue;
-			$totals[$field_name] = $this->calculateTotals($page_ids, $no_limits_page_ids, $field_name);
+			foreach ($field_names as $field_name) {
+				if (isset($totals[$field_name])) continue;
+				$totals[$field_name] = $this->calculateTotals($page_ids, $no_limits_page_ids, $field_name);
+			}
 		}
 
 		$event->return .= $this->renderTotals($totals);
@@ -195,10 +197,10 @@ class ListerCalculator extends WireData implements Module, ConfigurableModule {
 	 */
 	protected function ___getListersAndFields(): array {
 
-		$listers_and_fields = $this->get('listers_and_fields');
-		if (empty($listers_and_fields)) return [];
+		$configured_value = $this->get('listers_and_fields');
+		if (empty($configured_value)) return [];
 
-		$listers_and_fields = explode("\n", $listers_and_fields);
+		$listers_and_fields = explode("\n", $configured_value);
 		$listers_and_fields = array_map('trim', $listers_and_fields);
 		$listers_and_fields = array_filter($listers_and_fields);
 		$listers_and_fields = array_map(function($line) {
@@ -207,7 +209,12 @@ class ListerCalculator extends WireData implements Module, ConfigurableModule {
 		$listers_and_fields = array_filter($listers_and_fields, function($line) {
 			return count($line) === 2;
 		});
-		$listers_and_fields = array_combine(array_column($listers_and_fields, 0), array_column($listers_and_fields, 1));
+
+		// convert to associative array where key is lister name and value is an array of field names
+		$listers_and_fields = array_reduce($listers_and_fields, function($carry, $item) {
+			$carry[$item[0]][] = $item[1];
+			return $carry;
+		}, []);
 
 		return $listers_and_fields;
 	}
